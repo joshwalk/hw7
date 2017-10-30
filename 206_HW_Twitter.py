@@ -7,7 +7,6 @@ import json
 ## SI 206 - HW
 ## Joshua Walker
 ## Your section day/time: Thu 6-7pm
-## Any names of people you worked with on this assignment:
 
 
 ## Write code that uses the tweepy library to search for tweets with three different phrases of the
