@@ -2,6 +2,7 @@ import unittest
 import tweepy
 import requests
 import json
+import twitter_info
 
 
 ## SI 206 - HW
@@ -47,10 +48,10 @@ import json
 ## Get your secret values to authenticate to Twitter. You may replace each of these
 ## with variables rather than filling in the empty strings if you choose to do the secure way
 ## for EC points
-consumer_key = ""
-consumer_secret = ""
-access_token = ""
-access_token_secret = ""
+consumer_key = twitter_info.consumer_key
+consumer_secret = twitter_info.consumer_secret
+access_token = twitter_info.access_token
+access_token_secret = twitter_info.access_token_secret
 ## Set up your authentication to Twitter
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
@@ -65,13 +66,39 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 ## 1. Set up the caching pattern start -- the dictionary and the try/except
 ## 		statement shown in class.
 
+CACHE_FNAME = 'cache_twitter_searches.json'
+
+# the following code is modeled after cache_example.py from class
+try:
+    cache_file = open(CACHE_FNAME, 'r') # Try to read the data from the file
+    cache_contents = cache_file.read()  # If it's there, get it into a string
+    CACHE_DICTION = json.loads(cache_contents) # And then load it into a dictionary
+    cache_file.close() # Close the file, we're good, we got the data in a dictionary.
+except:
+    CACHE_DICTION = {}
 
 
 ## 2. Write a function to get twitter data that works with the caching pattern,
 ## 		so it either gets new data or caches data, depending upon what the input
 ##		to search for is.
 
-
+def getSearchWithCaching(search_query):
+    if search_query in CACHE_DICTION: # if search term is found in cache, use this data
+        print("using cache")
+        return CACHE_DICTION[search_query] # returns cached results of that query
+    else: # if not, get the data from Twitter
+        print("fetching")
+        results = api.search(q=search_query, count=5)
+        try:
+            CACHE_DICTION[search_query] = results
+            dumped_json_cache = json.dumps(CACHE_DICTION)
+            fw = open(CACHE_FNAME,"w")
+            fw.write(dumped_json_cache) # writes results of that query to cache
+            fw.close() # Close the open file
+            return CACHE_DICTION[search_query] # returns results of that query
+        except:
+            print("Wasn't in cache and wasn't valid search either")
+            return None
 
 ## 3. Using a loop, invoke your function, save the return value in a variable, and explore the
 ##		data you got back!
@@ -80,3 +107,12 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 ## 4. With what you learn from the data -- e.g. how exactly to find the
 ##		text of each tweet in the big nested structure -- write code to print out
 ## 		content from 5 tweets, as shown in the linked example.
+
+count = 0
+while count < 3: # runs the following 3 times
+    search_term = input("Enter tweet term: ")
+    data = getSearchWithCaching(search_term)
+    for tweet in data["statuses"]:
+        print("TEXT: " + tweet["text"])
+        print("CREATED AT: " + tweet["created_at"] + "\n")
+    count += 1
